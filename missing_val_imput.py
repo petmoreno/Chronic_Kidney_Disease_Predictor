@@ -25,6 +25,7 @@ def drop_threshold_info (df, threshold):
     my_utils.info_adhoc(df_totalclean_threshold)
     return df_totalclean_threshold
 
+
 #create a dataframe using SimpleImputer for num features with strategy defined
 def simpleImputeNum(df,num_features, strategy):
     df_imp_num=df[num_features]

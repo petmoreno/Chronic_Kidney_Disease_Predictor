@@ -23,3 +23,12 @@ def info_adhoc(df):
     df_info['dtype']=df.dtypes
     return df_info
 
+#convert category attributes to their num codes
+def cat_to_codes(df, cat_feat):
+    df_cat_coded=df
+    for i in range(len(cat_feat)):
+            df_cat_coded.loc[:,cat_feat[i]]=df_cat_coded.loc[:,cat_feat[i]].cat.codes    
+    #The NaN has been coded to -1. So we have to revert it for the imputer
+    df_cat_coded.replace(to_replace=-1,value=np.NAN,inplace=True)
+    return df_cat_coded
+

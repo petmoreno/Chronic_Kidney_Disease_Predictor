@@ -11,11 +11,12 @@ import pandas as pd
 import numpy as np
 import seaborn as sn
 import matplotlib.pyplot as plt
-
+from sklearn.preprocessing import OrdinalEncoder, LabelEncoder
 
 #import modules created 
 import my_utils
 import missing_val_imput
+import feature_select
 
 
 
@@ -78,6 +79,7 @@ df.describe()
 #Show the describe of category features
 df.describe(include='category')
 
+
 #Defining a strategy for handling the data missing. First we adopt
 #complete case strategy where all NaN are cleaned by using drop_na
 # Following onenote notebook of work plan for KCD 
@@ -93,12 +95,11 @@ missing_val_imput.print_df_threshold_shape(df)
 #It seems reasonable a let the rest to impute.
 df_totalclean_threshold= missing_val_imput.drop_threshold_info(df, 16)
 
-
 ########Step 1.b.i: Bayesian imputation for num attributes
 
 #to decide an imputation estrategy lets look at hist of numerical attributes
-pd.plotting.scatter_matrix(df_totalclean_threshold)
-sn.pairplot(df_totalclean_threshold,hue='classification')
+#pd.plotting.scatter_matrix(df_totalclean_threshold)
+#sn.pairplot(df_totalclean_threshold,hue='classification')
 
 #numerical variables do not seem to have a normal distr then imputation strategy would be median
 
@@ -108,17 +109,16 @@ df_totalclean_threshold_imp_num=missing_val_imput.simpleImputeNum(df_totalclean_
 #########Step 1.b.ii: Bayesian imputation for category attributes
 
 #first approach: assign unkown category to NaN values
-df_totalclean_threshold_imp_cat_unk=missing_val_imput.simpleImputeCat(df_totalclean_threshold,features_to_category,'constant', 'unknown')
+df_totalclean_threshold_imp_cat_unk=missing_val_imput.simpleImputeCat(df_totalclean_threshold,features_to_category+['classification'],'constant', 'unknown')
 
 #second_approach:assign most_frequent strategy
-df_totalclean_threshold_imp_cat_mostfq=missing_val_imput.simpleImputeCat(df_totalclean_threshold,features_to_category)
-
+df_totalclean_threshold_imp_cat_mostfq=missing_val_imput.simpleImputeCat(df_totalclean_threshold,features_to_category+['classification'])
 
 #creating the entire datasets witn simple imputation. 
 #One for cat imputation of unknown
-df_totalclean_threshold_imp_unk=pd.concat([df_totalclean_threshold_imp_num, df_totalclean_threshold_imp_cat_unk,df_totalclean_threshold['classification']], axis=1)
+df_totalclean_threshold_imp_unk=pd.concat([df_totalclean_threshold_imp_num, df_totalclean_threshold_imp_cat_unk], axis=1)
 #other for cat imputation with mostfrequent
-df_totalclean_threshold_imp_mostfq=pd.concat([df_totalclean_threshold_imp_num, df_totalclean_threshold_imp_cat_mostfq,df_totalclean_threshold['classification']], axis=1)
+df_totalclean_threshold_imp_mostfq=pd.concat([df_totalclean_threshold_imp_num, df_totalclean_threshold_imp_cat_mostfq], axis=1)
 
 
 
@@ -130,7 +130,7 @@ df_totalclean_threshold_impMult_num=missing_val_imput.multipleImputNum(df_totalc
 #df_totalclean_threshold_impMult_cat=missing_val_imput.multipleImputCat(df_totalclean_threshold,features_to_category)
 
 #composing the entire data frame with IterativeImputer for num attr and SimpleImputer for cat attr.
-df_totalclean_threshold_impMult=pd.concat([df_totalclean_threshold_impMult_num,df_totalclean_threshold_imp_cat_mostfq, df_totalclean_threshold['classification']], axis=1)
+df_totalclean_threshold_impMult=pd.concat([df_totalclean_threshold_impMult_num,df_totalclean_threshold_imp_cat_mostfq], axis=1)
 
 #########Step 1.b.iii.I: Multiple imputation with every features using KNNImputer
 ## Numerical features 
@@ -140,7 +140,7 @@ df_totalclean_threshold_impKNN_num=missing_val_imput.knnImputNum(df_totalclean_t
 df_totalclean_threshold_impKNN_cat=missing_val_imput.knnImputCat(df_totalclean_threshold,features_to_category)
 
 #composing the entire data frame with KNNImputer for num attr and SimpleImputer for cat attr.
-df_totalclean_threshold_impKNN=pd.concat([df_totalclean_threshold_impKNN_num,df_totalclean_threshold_imp_cat_mostfq, df_totalclean_threshold['classification']], axis=1)
+df_totalclean_threshold_impKNN=pd.concat([df_totalclean_threshold_impKNN_num,df_totalclean_threshold_imp_cat_mostfq], axis=1)
 
 ####Final of step1. The df created to feed feature selection are:
     # df_total_clean: complete case
@@ -148,3 +148,25 @@ df_totalclean_threshold_impKNN=pd.concat([df_totalclean_threshold_impKNN_num,df_
     # df_totalclean_threshold_imp_mostfq: threshold set as 16 with most frequent as strategy imputation for cat attrib and median for num attr
     # df_totalclean_threshold_impMult:threshold set as 16 with most frequent as strategy imputation for cat attrib and multiple imputation for num attr
     # df_totalclean_threshold_impKNN:threshold set as 16 with most frequent as strategy imputation for cat attrib and KNNImputer for num attr
+
+
+####Step 2: Feature Selection
+#For a first try we will use df_totalclean_threshold_imp_mostfq
+#We have to map categorical attributes to num codes. Using ordinal encoder and label encoder
+
+df_cat_coded= df_totalclean_threshold_imp_mostfq.copy()
+oe=OrdinalEncoder()
+df_cat_coded[features_to_category]=oe.fit_transform(df_cat_coded[features_to_category])
+df_cat_coded[features_to_category]
+le=LabelEncoder()
+df_cat_coded['classification']=le.fit_transform(df_cat_coded['classification'])
+my_utils.info_adhoc(df_cat_coded)
+
+X_num=df_cat_coded[numerical_features]
+X_cat=df_cat_coded[features_to_category]
+y=df_cat_coded['classification']
+df_featSel_num=feature_select.feat_sel_Num_to_Cat(X_num,y,'all')
+#it returns an array
+df_featSel_num=feature_select.feat_sel_Num_to_Cat(X_num,y,5)
+
+df_featSel_cat=feature_select.feat_sel_Cat_to_Cat(X_cat,y,'all')
