@@ -162,11 +162,36 @@ le=LabelEncoder()
 df_cat_coded['classification']=le.fit_transform(df_cat_coded['classification'])
 my_utils.info_adhoc(df_cat_coded)
 
+X=df_cat_coded.drop('classification',axis=1)
 X_num=df_cat_coded[numerical_features]
 X_cat=df_cat_coded[features_to_category]
 y=df_cat_coded['classification']
-df_featSel_num=feature_select.feat_sel_Num_to_Cat(X_num,y,'all')
-#it returns an array
-df_featSel_num=feature_select.feat_sel_Num_to_Cat(X_num,y,5)
 
-df_featSel_cat=feature_select.feat_sel_Cat_to_Cat(X_cat,y,'all')
+#Step 2.1: Applying filtering methods of feature selection
+df_featSel_num=feature_select.feat_sel_Num_to_Cat(X_num,y,'all')
+
+#Applying ANOVA for numeric attributes
+df_featSel_num=feature_select.feat_sel_Num_to_Cat(X_num,y,5)
+df_featSel_num.corr()
+
+#Applying chi2 for numeric attributes
+df_featSel_cat_chi2=feature_select.feat_sel_Cat_to_Cat_chi2(X_cat,y,'all')
+df_featSel_cat_chi2=feature_select.feat_sel_Cat_to_Cat_chi2(X_cat,y,5)
+
+df_featSel_cat_mutinf=feature_select.feat_sel_Cat_to_Cat_mutinf(X,y,'all')
+df_featSel_cat_mutinf=feature_select.feat_sel_Cat_to_Cat_mutinf(X,y,10)
+
+df_cat_coded_featSel_chi2=pd.concat([df_featSel_num,df_featSel_cat_chi2,y], axis=1)
+df_cat_coded_featSel_mutinf=pd.concat([df_featSel_num,df_featSel_cat_mutinf,y], axis=1)
+
+#Step 2.2: Applying wrapper methods for feature selection
+#Applying RFE with an automatic detector of output features number.
+df_cat_coded_featSel_RFE=feature_select.feat_sel_RFE(X,y,k_out_features='all')
+df_cat_coded_featSel_RFE=pd.concat([df_cat_coded_featSel_RFE,y], axis=1)
+
+#Applying RFECV to check the optimal number of features
+df_cat_coded_featSel_RFECV=feature_select.feat_sel_RFECV(X,y)
+
+#Applying Backward Elimination 
+df_cat_coded_featSel_BackElim=feature_select.feat_sel_backElimination(X,y)
+
