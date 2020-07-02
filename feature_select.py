@@ -14,8 +14,11 @@ from sklearn.feature_selection import RFE
 from sklearn.feature_selection import RFECV
 import statsmodels.api as sm
 
+
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVR 
+from sklearn.linear_model import RidgeCV, LassoCV, Ridge, Lasso
+
 ################
 ##Filter methods
 ################
@@ -126,7 +129,7 @@ def feat_sel_RFECV(X,y, estimator="LogisticRegression"):
 
 #Backward elimination
 def feat_sel_backElimination(X,y):
-    
+#coded extracted from: https://towardsdatascience.com/feature-selection-with-pandas-e3690ad8504b
     cols = list(X.columns)
     pmax = 1
     while (len(cols)>0):
@@ -149,3 +152,51 @@ def feat_sel_backElimination(X,y):
 #############
 ##Embedded methods
 ############
+#Lasso linear model as regularizer adapted from https://towardsdatascience.com/feature-selection-with-pandas-e3690ad8504b
+def feat_sel_Lasso(X,y):
+    reg = Lasso()
+    reg.fit(X, y)
+    #print("Best alpha using built-in LassoCV: %f" % reg.alpha_)
+    #print("Best score using built-in LassoCV: %f" %reg.score(X,y))
+    coef = pd.Series(reg.coef_, index = X.columns)
+    feat_sel=coef!=0
+    X_pruned=X[feat_sel.index[feat_sel]]
+    print("Lasso picked " + str(sum(coef != 0)) + " variables and eliminated the other " +  str(sum(coef == 0)) + " variables")
+    return X_pruned
+
+#Lasso linear model with CV as regularizer extracted from https://towardsdatascience.com/feature-selection-with-pandas-e3690ad8504b
+def feat_sel_LassoCV(X,y):
+    reg = LassoCV()
+    reg.fit(X, y)
+    #print("Best alpha using built-in LassoCV: %f" % reg.alpha_)
+    #print("Best score using built-in LassoCV: %f" %reg.score(X,y))
+    coef = pd.Series(reg.coef_, index = X.columns)
+    feat_sel=coef!=0
+    print('feat_sel in LassoCV: ', feat_sel)    
+    X_pruned=X[feat_sel.index[feat_sel]]
+    print("LassoCV picked " + str(sum(coef != 0)) + " variables and eliminated the other " +  str(sum(coef == 0)) + " variables")
+    return X_pruned
+
+#RidgeCV linear model as regularizer extracted and adapted from https://www.datacamp.com/community/tutorials/feature-selection-python
+def feat_sel_RidgeCV(X,y):
+    reg = RidgeCV()
+    reg.fit(X, y)
+    #print("Best alpha using built-in RidgeCV: %f" % reg.alpha_)
+    #print("Best score using built-in RidgeCV: %f" %reg.score(X,y))
+    coef = pd.Series(reg.coef_, index = X.columns)
+    feat_sel=coef>=0
+    X_pruned=X[feat_sel.index[feat_sel]]
+    print("RidgeCV picked " + str(sum(coef > 0)) + " variables and eliminated the other " +  str(sum(coef <= 0)) + " variables")
+    return X_pruned
+
+#Ridge linear model as regularizer extracted and adapted from https://www.datacamp.com/community/tutorials/feature-selection-python
+def feat_sel_Ridge(X,y):
+    reg = Ridge()
+    reg.fit(X, y)
+    #print("Best alpha using built-in RidgeCV: %f" % reg.alpha_)
+    #print("Best score using built-in RidgeCV: %f" %reg.score(X,y))
+    coef = pd.Series(reg.coef_, index = X.columns)
+    feat_sel=coef>=0
+    X_pruned=X[feat_sel.index[feat_sel]]
+    print("Ridge picked " + str(sum(coef > 0)) + " variables and eliminated the other " +  str(sum(coef <= 0)) + " variables")
+    return X_pruned
