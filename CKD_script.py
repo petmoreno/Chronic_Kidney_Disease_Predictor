@@ -322,8 +322,6 @@ cross_val_score(dectree_clf,X_train,y_train, cv=5, scoring='accuracy')
 
 from sklearn.ensemble import RandomForestClassifier
 rndforest_clf=RandomForestClassifier()
-X_train=train_set.drop('classification', axis=1)
-y_train=train_set['classification']
 cross_val_score(rndforest_clf,X_train,y_train, cv=5, scoring='accuracy')
 
 #
