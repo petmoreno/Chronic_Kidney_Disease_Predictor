@@ -14,6 +14,8 @@ from sklearn.impute import KNNImputer
 #This file contains functions defined to handle missing values imputation
 import my_utils
 
+from sklearn.base import BaseEstimator, TransformerMixin
+
 #Print the number of rows remaining by setting the threshold in dropna from 0 to total N of features (no nan value in dataset)
 def print_df_threshold_shape(df):
     for i in range (len(df.columns)+1):
@@ -26,13 +28,85 @@ def drop_threshold_info (df, threshold):
     return df_totalclean_threshold
 
 
+#Class that handle imputation of NaN values in numeric features
+class Numeric_Imputer(BaseEstimator, TransformerMixin):
+    #Different modes of imputation depending on strategy parameter
+    #median:simple imputation by considering median of feature values
+    #mean: simple imputation by considering mean of feature values
+    #iterative: multiple imputation by using IterativeImputer
+    #knn: KNN imputation
+    def __init__(self,strategy='median'):
+        print('\n>>>>>>>>Calling init() from Numeric_Imputer')
+        self.strategy=strategy
+        
+        if self.strategy=='median':
+            self.num_imputer=SimpleImputer(strategy=self.strategy)
+        if self.strategy=='mean':
+            self.num_imputer=SimpleImputer(strategy=self.strategy)
+        if self.strategy=='iterative':
+            self.num_imputer=IterativeImputer(random_state=0, sample_posterior='True')
+        if self.strategy=='knn':
+            self.num_imputer=KNNImputer()
+    
+    def fit(self,X,y=None):
+        print('\n>>>>>>>>Calling fit() from Numeric_Imputer')
+        self.num_imputer.fit(X,y)
+        return self
+    
+    def transform(self,X,y=None):
+        print('\n>>>>>>>>Calling transform() from Numeric_Imputer')
+        X=self.num_imputer.transform(X)
+        return X
+    
+#Class that handle imputation of NaN values in category features    
+class Category_Imputer(BaseEstimator, TransformerMixin):
+    #Different modes of imputation depending on strategy parameter
+    #most_frequent:simple imputation by considering most frequent feature's value
+    #constant: simple imputation by adding new category unknown to NaN values
+    
+    def __init__(self,strategy='most_frequent'):
+        print('\n>>>>>>>>Calling init() from Category_Imputer')
+        self.strategy=strategy
+        if self.strategy=='most_frequent':
+            self.cat_imputer=SimpleImputer(strategy=self.strategy)
+        if self.strategy=='constant':
+            self.cat_imputer=SimpleImputer(strategy=self.strategy,fill_value='unknown')
+        
+    
+    def fit(self,X,y=None):
+        print('\n>>>>>>>>Calling fit() from Category_Imputer')
+        self.cat_imputer.fit(X,y)
+        return self
+    
+    def transform(self,X,y=None):
+        print('\n>>>>>>>>Calling transform() from Category_Imputer')
+        X=self.cat_imputer.transform(X)
+        return X
+
+    
 #create a dataframe using SimpleImputer for num features with strategy defined
-def simpleImputeNum(df,num_features, strategy):
-    df_imp_num=df[num_features]
-    num_imputer=SimpleImputer(strategy=strategy)
-    arr_imp_num=num_imputer.fit_transform(df_imp_num)
-    df_imp_num=pd.DataFrame(arr_imp_num, columns=df_imp_num.columns)
-    return df_imp_num
+def simpleImputeNum(df, strategy):
+        df_imp_num=df[num_features]
+        num_imputer=SimpleImputer(strategy=strategy)
+        arr_imp_num=num_imputer.fit_transform(df_imp_num)
+        df_imp_num=pd.DataFrame(arr_imp_num, columns=df_imp_num.columns)
+        return df_imp_num
+    #Function that perform multiple imputation to a dataframe with numerical attributes
+def multipleImputNum(df,num_features):
+        df_impMult_num=df[num_features]
+        imp_mult_num=IterativeImputer(random_state=0, sample_posterior='True')#set sample_posterior='True' for using to multiple imputation
+        arr_impMult_num=imp_mult_num.fit_transform(df_impMult_num)
+        df_impMult_num=pd.DataFrame(arr_impMult_num, columns=df_impMult_num.columns)
+        return df_impMult_num
+    
+    #Function that perform KNN imputation to a dataframe with numerical attributes
+def knnImputNum(df, num_features):
+        df_impKNN_num=df[num_features]
+        knn_imp=KNNImputer()
+        arr_impKNN_num=knn_imp.fit_transform(df_impKNN_num)
+        df_impKNN_num=pd.DataFrame(arr_impKNN_num, columns=df_impKNN_num.columns)
+        return df_impKNN_num
+
 
 #create a dataframe using SimpleImputer for cat features with strategy defined
 def simpleImputeCat(df,cat_features, strategy='most_frequent', fill_value=None):
@@ -51,13 +125,7 @@ def simpleImputeCat(df,cat_features, strategy='most_frequent', fill_value=None):
     
     return df_imp_cat
 
-#Function that perform multiple imputation to a dataframe with numerical attributes
-def multipleImputNum(df,num_features):
-    df_impMult_num=df[num_features]
-    imp_mult_num=IterativeImputer(random_state=0, sample_posterior='True')#set sample_posterior='True' for using to multiple imputation
-    arr_impMult_num=imp_mult_num.fit_transform(df_impMult_num)
-    df_impMult_num=pd.DataFrame(arr_impMult_num, columns=df_impMult_num.columns)
-    return df_impMult_num
+
 
 #Function that perform multiple imputation to a dataframe with cat attributes. PROBLEM:IterativeImputer does seem to work with category attributes
 def multipleImputCat(df, cat_features):

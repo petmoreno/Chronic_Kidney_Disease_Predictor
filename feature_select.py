@@ -19,6 +19,8 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVR 
 from sklearn.linear_model import RidgeCV, LassoCV, Ridge, Lasso
 
+from sklearn.base import BaseEstimator, TransformerMixin
+
 ################
 ##Filter methods
 ################
@@ -200,3 +202,132 @@ def feat_sel_Ridge(X,y):
     X_pruned=X[feat_sel.index[feat_sel]]
     print("Ridge picked " + str(sum(coef > 0)) + " variables and eliminated the other " +  str(sum(coef <= 0)) + " variables")
     return X_pruned
+
+#Wrapper transformer for Backward Elimination feature selection
+class Backward_Elimination (BaseEstimator, TransformerMixin):
+    def __init__(self):
+        print('\n>>>>>>>>Calling init() from Backward_Elimination')
+        
+    def fit(self,X,y=None):
+        print('\n>>>>>>>>Calling fit() from Backward_Elimination')
+        cols = list(X.columns)
+        pmax = 1
+        while (len(cols)>0):
+            p= []
+            X_1 = X[cols]
+            X_1 = sm.add_constant(X_1)
+            model = sm.OLS(y,X_1).fit()
+            p = pd.Series(model.pvalues.values[1:],index = cols)      
+            pmax = max(p)
+            feature_with_p_max = p.idxmax()
+            if(pmax>0.05):
+                cols.remove(feature_with_p_max)
+            else:
+                break
+        self.selected_features_BE = cols
+        return self
+    
+    def transform(self, X):
+        print('\n>>>>>>>>Calling transform() from Backward_Elimination')
+        X_pruned=X[self.selected_features_BE]
+        return X_pruned
+    
+#Wrapper transformer for Backward Elimination feature selection
+class LassoCV_FeatSel(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        print('\n>>>>>>>>Calling init() from LassoCV_FeatSel')
+        self.reg=LassoCV()
+    
+    def fit(self,X,y=None):
+        print('\n>>>>>>>>Calling fit() from LassoCV_FeatSel')
+        self.reg.fit(X,y)
+        return self
+        
+    def transform(self,X):
+        print('\n>>>>>>>>Calling transform() from LassoCV_FeatSel')
+        coef = pd.Series(self.reg.coef_, index = X.columns)
+        feat_sel=coef!=0        
+        X_pruned=X[feat_sel.index[feat_sel]]
+        return X_pruned
+    
+#Wrapper transformer for Backward Elimination feature selection
+class RidgeCV_FeatSel(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        print('\n>>>>>>>>Calling init() from RidgeCV_FeatSel')
+        self.reg=RidgeCV()
+        
+    def fit(self,X,y=None):
+        print('\n>>>>>>>>Calling fit() from RidgeCV_FeatSel')
+        self.reg.fit(X,y)
+        return self
+        
+    def transform(self,X):
+        print('\n>>>>>>>>Calling transform() from RidgeCV_FeatSel')
+        coef = pd.Series(reg.coef_, index = X.columns)
+        feat_sel=coef>=0
+        X_pruned=X[feat_sel.index[feat_sel]]        
+        return X_pruned
+    
+        
+        
+#Class to run feature selection depending on different strategies
+class Feature_Selector(BaseEstimator, TransformerMixin):
+    #filter_num: performing ANOVA valid for numeric input and category output
+    #filter_cat: performing chi2 valid for category input and category output
+    #filter_mutinf:performing mutual information valid for numeric/category input and category output
+    #wrapper_RFECV: performing RFECV with two optional regressor LogisticRegression(by defaurl) or SVR valid for numeric/category input and category output
+    #wrapper_BackElim:performing Backward Elimination valid for numeric/category input and category output
+    #LassoCV: performing LassoCV valid for numeric/category input and category output
+    #RidgeCV: performing RidgeCV valid for numeric/category input and category output
+    
+        
+    def __init__(self,y_train,strategy='wrapper_RFECV',k_out_features=5, rfe_estimator='LogisticRegression'):
+        print('\n>>>>>>>>Calling init() from Feature_Selector')
+        
+        self.y_train=y_train
+        self.strategy=strategy
+        self.k_out_features=k_out_features
+        self.rfe_estimator=rfe_estimator
+        
+        if self.strategy=='filter_num':
+            self.feat_sel=SelectKBest(score_func=f_classif, k=self.k_out_features)
+            
+        if self.strategy=='filter_cat':
+            self.feat_sel=SelectKBest(score_func=chi2, k=self.k_out_features)
+            
+        if self.strategy=='filter_mutinf':
+            self.feat_sel=SelectKBest(score_func=mutual_info_classif, k=self.k_out_features)
+            
+        if self.strategy=='wrapper_RFECV':
+            if self.rfe_estimator=='LogisticRegression':
+                self.model=LogisticRegression(solver='lbfgs', max_iter=2000)
+            if self.rfe_estimator=='SVR':
+                self.model=SVR(kernel='linear')
+            self.feat_sel=RFECV(self.model)
+        
+        if self.strategy=='wrapper_BackElim':
+            self.feat_sel=Backward_Elimination()   
+        
+        if self.strategy=='LassoCV':
+            self.feat_sel=LassoCV_FeatSel()
+        
+        if self.strategy=='RidgeCV':
+            self.feat_sel=RidgeCV_FeatSel()
+        
+        
+    def fit(self,X,y=None):
+        print('\n>>>>>>>>Calling fit() from Feature_Selector')        
+        self.feat_sel.fit(X,self.y_train)
+        return self
+    
+    def transform(self,X,y=None):
+        print('\n>>>>>>>>Calling transform() from Feature_Selector')
+        X_pruned=self.feat_sel.transform(X)
+        return X_pruned
+        
+            
+        
+            
+        
+        
+            

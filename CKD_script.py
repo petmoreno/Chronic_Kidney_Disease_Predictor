@@ -301,30 +301,31 @@ from sklearn.model_selection import cross_val_score
 #Classifier models to use
 from sklearn.linear_model import SGDClassifier
 sgd_clf=SGDClassifier()
-cross_val_score(sgd_clf,X_train,y_train, cv=5, scoring='accuracy')
+cross_val_score(sgd_clf,X_train,y_train, cv=5, scoring='roc_auc')
 
 
 from sklearn.linear_model import LogisticRegression
 logreg_clf=LogisticRegression()
-cross_val_score(logreg_clf,X_train,y_train, cv=5, scoring='accuracy')
+cross_val_score(logreg_clf,X_train,y_train, cv=5, scoring='roc_auc')
 
 from sklearn.svm import LinearSVC
 linsvc_clf=LinearSVC()
-cross_val_score(linsvc_clf,X_train,y_train, cv=5, scoring='accuracy')
+cross_val_score(linsvc_clf,X_train,y_train, cv=5, scoring='roc_auc')
 
 from sklearn.svm import SVC
 svc_clf=SVC()
-cross_val_score(svc_clf,X_train,y_train, cv=5, scoring='accuracy')
+cross_val_score(svc_clf,X_train,y_train, cv=5, scoring='roc_auc')
 
 from sklearn.tree import DecisionTreeClassifier
 dectree_clf=DecisionTreeClassifier()
-cross_val_score(dectree_clf,X_train,y_train, cv=5, scoring='accuracy')
+cross_val_score(dectree_clf,X_train,y_train, cv=5, scoring='roc_auc')
 
 from sklearn.ensemble import RandomForestClassifier
 rndforest_clf=RandomForestClassifier()
-cross_val_score(rndforest_clf,X_train,y_train, cv=5, scoring='accuracy')
-
+cross_val_score(rndforest_clf,X_train,y_train, cv=5, scoring='roc_auc')
 #
+
+#this is a test for new branch
 
 
 
