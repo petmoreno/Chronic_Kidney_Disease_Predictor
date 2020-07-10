@@ -6,5 +6,5 @@ save_non_project_files = False
 
 [main]
 version = 0.2.0
-recent_files = ['CKD_script.py', 'CKD_pipeline.py', 'feature_select.py', 'missing_val_imput.py']
+recent_files = ['CKD_script.py', 'CKD_pipeline.py', 'feature_select.py', 'missing_val_imput.py', 'Chronic_Kidney_Disease\\chronic_kidney_disease.info.txt', 'adhoc_transf.py']
 

@@ -130,7 +130,7 @@ print('Creating the data preparation Pipeline')
 
 numerical_features=['age','bp','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
 category_features= ['sg','al','su','rbc', 'pc', 'pcc', 'ba', 'htn', 'dm', 'cad', 'appet', 'pe', 'ane']
-                               
+len(category_features)
 pipeline_numeric_feat= Pipeline([('mispelling',adhoc_transf.misspellingTransformer()),
                                  ('features_cast',adhoc_transf.Numeric_Cast_Column()),
                                  ('data_missing',missing_val_imput.Numeric_Imputer(strategy='median')),
@@ -175,9 +175,9 @@ rndforest_clf=RandomForestClassifier()
 #
 print ('Creating the full Pipeline')
 
-estimator=sgd_clf
+estimator=rndforest_clf
 full_pipeline=Pipeline([('data_prep',dataprep_pipe),
-                        ('model',estimator)])
+                        ('model',rndforest_clf)])
 
 full_pipeline.fit(X_train,y_train)
 
@@ -192,3 +192,24 @@ print('F1 Score with',estimator,' estimator : ',f1_score(y_test, y_pred, average
 print('Precision Score with',estimator,' estimator : ',precision_score(y_test, y_pred, average='weighted'))
 print('Recall Score with',estimator,' estimator : ',recall_score(y_test, y_pred, average='weighted'))
 print('ROC_AUC score with',estimator,' estimator ', roc_auc_score(y_test, y_pred))
+
+full_pipeline.get_params().keys()
+
+#############################
+##Step 5 GridSearchCV to find best params
+#############################
+
+param_grid={'model': [SGDClassifier(),LogisticRegression(),LinearSVC(),SVC(),DecisionTreeClassifier(),RandomForestClassifier()],
+            'data_prep__numeric_pipe__data_missing__strategy':['median','mean','iterative','knn'],
+            'data_prep__numeric_pipe__features_select__k_out_features': [1,2,3,4,5,6,7,8,9,10,11],
+            'data_prep__numeric_pipe__features_select__rfe_estimator':['LogisticRegression','SVR'],
+            'data_prep__numeric_pipe__features_select__strategy':['filter_num','filter_mutinf','wrapper_RFECV','wrapper_BackElim','LassoCV','RidgeCV'] ,
+            'data_prep__category_pipe__data_missing__strategy': ['most_frequent','constant'],
+            'data_prep__category_pipe__features_select__k_out_features': [1,2,3,4,5,6,7,8,9,10,11,12,13],
+            'data_prep__category_pipe__features_select__rfe_estimator':['LogisticRegression','SVR'],
+            'data_prep__category_pipe__features_select__strategy': ['filter_cat','filter_mutinf','wrapper_RFECV','wrapper_BackElim','LassoCV','RidgeCV'],
+    }
+
+from sklearn.model_selection import GridSearchCV
+clf=GridSearchCV(full_pipeline,param_grid, cv=5)
+clf.fit(X_train,y_train)
