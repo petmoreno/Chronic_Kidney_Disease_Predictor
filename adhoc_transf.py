@@ -68,6 +68,20 @@ class misspellingTransformer(BaseEstimator, TransformerMixin):
     def fit_transform(self, X, y=None,):
         return self.fit(X, y).transform(X, y)
 
+#Class for downcasting last category value of features 'al' and 'sg'
+class CastDown(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        print('\n>>>>>>>>Calling init() from CastDown')
+    
+    def fit(self,X, y=None):
+        print('\n>>>>>>>>Calling fit() from CastDown')
+        return self
+    
+    def transform(self, X, y=None):
+        print('\n>>>>>>>>Calling transform() from CastDown')
+        X[:,1][X[:,1]==5]=4
+        X[:,2][X[:,2]==5]=4
+        return X
     
 #Class to be included in FeatureUnion pipeline for casting numeric columns to float64 
 class Numeric_Cast(BaseEstimator, TransformerMixin):

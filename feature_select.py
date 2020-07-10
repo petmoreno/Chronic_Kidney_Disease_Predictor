@@ -280,11 +280,11 @@ class Feature_Selector(BaseEstimator, TransformerMixin):
     #LassoCV: performing LassoCV valid for numeric/category input and category output
     #RidgeCV: performing RidgeCV valid for numeric/category input and category output
     
-        
-    def __init__(self,y_train,strategy='wrapper_RFECV',k_out_features=5, rfe_estimator='LogisticRegression'):
+    #def __init__(self,y_train,strategy='wrapper_RFECV',k_out_features=5, rfe_estimator='LogisticRegression'):       
+    def __init__(self,strategy='wrapper_RFECV',k_out_features=5, rfe_estimator='LogisticRegression'):
         print('\n>>>>>>>>Calling init() from Feature_Selector')
         
-        self.y_train=y_train
+        #self.y_train=y_train
         self.strategy=strategy
         self.k_out_features=k_out_features
         self.rfe_estimator=rfe_estimator
@@ -316,7 +316,12 @@ class Feature_Selector(BaseEstimator, TransformerMixin):
         
         
     def fit(self,X,y=None):
-        print('\n>>>>>>>>Calling fit() from Feature_Selector')        
+        print('\n>>>>>>>>Calling fit() from Feature_Selector')
+        #index=X.index
+        self.y_train=y
+        print('\n********Inside fit() from Feature_Selector y_train length:', self.y_train.size)        
+        print('\n********Calling fit() from Feature_Selector X length: ', X.shape[0])
+        
         self.feat_sel.fit(X,self.y_train)
         return self
     

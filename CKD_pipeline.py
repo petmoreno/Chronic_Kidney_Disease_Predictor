@@ -15,7 +15,7 @@ import pandas as pd
 import numpy as np
 import seaborn as sn
 import matplotlib.pyplot as plt
-from sklearn.preprocessing import OrdinalEncoder, LabelEncoder
+from sklearn.preprocessing import OrdinalEncoder, LabelEncoder, OneHotEncoder
 from sklearn.preprocessing import MinMaxScaler
 
 from sklearn.pipeline import Pipeline, FeatureUnion
@@ -29,6 +29,22 @@ import preprocessing
 import adhoc_transf
 
 from sklearn.model_selection import train_test_split
+
+from sklearn.model_selection import cross_val_score
+
+#Classifier models to use
+from sklearn.linear_model import SGDClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import LinearSVC
+from sklearn.svm import SVC
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import f1_score
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import roc_auc_score
 
 
 #%matplotlib inline 
@@ -78,9 +94,13 @@ strat_train_set['classification'].value_counts()
 strat_test_set['classification'].value_counts()
 
 train_set_copy=train_set.copy()
+test_set_copy=test_set.copy()
 
 X_train=train_set_copy.drop('classification',axis=1)
 y_train=train_set_copy['classification'].copy()
+
+X_test=test_set_copy.drop('classification',axis=1)
+y_test=test_set_copy['classification'].copy()
 
 #############################
 ##Step 1 Misspelling correction and Encoding target feature
@@ -96,21 +116,17 @@ y_train=misspellingCorrector(y_train)
 label_enc=LabelEncoder()
 y_train=label_enc.fit_transform(y_train)
 
-
 #############################
-##Step 2 Pipeline creation for data preparation
+##Step 2 Feature Engineering
+#############################
+#Cross_val_score fails due to features al and su has only few samples of values 5.0. So we have to cast to previous category
+#X_train.loc[:,'al'].replace(5,4,inplace=True)
+#X_train.loc[:,'su'].replace(5,4,inplace=True)
+#############################
+##Step 3 Pipeline creation for data preparation
 #############################
 
 print('Creating the data preparation Pipeline')
-
-# dataprep_pipe=Pipeline(steps=[('misspelling', adhoc_transf.misspellingTransformer('classification'),
-#                               ('features_cast', FeatureUnion([(                                  
-#                                   'num_cast',Numeric_Cast(numerical_features)),
-#                                   ('cat_cast',Category_Cast(features_to_category))])),
-#                               ('data_missing',()),
-#                               ('feautures_encoding',()),
-#                               ('features_selection',()),
-#                               ('preprocessing',())])
 
 numerical_features=['age','bp','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
 category_features= ['sg','al','su','rbc', 'pc', 'pcc', 'ba', 'htn', 'dm', 'cad', 'appet', 'pe', 'ane']
@@ -118,30 +134,61 @@ category_features= ['sg','al','su','rbc', 'pc', 'pcc', 'ba', 'htn', 'dm', 'cad',
 pipeline_numeric_feat= Pipeline([('mispelling',adhoc_transf.misspellingTransformer()),
                                  ('features_cast',adhoc_transf.Numeric_Cast_Column()),
                                  ('data_missing',missing_val_imput.Numeric_Imputer(strategy='median')),
-                                 ('features_select',feature_select.Feature_Selector(y_train, strategy='filter_mutinf', k_out_features=5)),
+                                 ('features_select',feature_select.Feature_Selector(strategy='wrapper_RFECV')),
                                  ('scaler', MinMaxScaler())
                         ])
 
 pipeline_category_feat= Pipeline([('mispelling',adhoc_transf.misspellingTransformer()),
                                  ('features_cast',adhoc_transf.Category_Cast_Column()),
                                  ('data_missing',missing_val_imput.Category_Imputer(strategy='most_frequent')),
+                                 ('cat_feat_engineering',adhoc_transf.CastDown()),
                                  ('encoding', OrdinalEncoder()),
-                                 ('features_select',feature_select.Feature_Selector(y_train, strategy='filter_cat', k_out_features=6))
+                                 ('features_select',feature_select.Feature_Selector(strategy='wrapper_RFECV'))
                         ])
 
 dataprep_pipe=ColumnTransformer([('numeric_pipe',pipeline_numeric_feat,numerical_features),
                                  ('category_pipe',pipeline_category_feat, category_features)
                                 ])
 
-X_train1=pipeline_numeric_feat.fit_transform(X_train[numerical_features],y_train)
-X_train1=pipeline_category_feat.fit_transform(X_train[category_features],y_train)
 
-X_train1=dataprep_pipe.fit_transform(X_train,y_train)
+#For testing data_prep pipelines individually
+#X_train1=pipeline_numeric_feat.fit_transform(X_train[numerical_features],y_train)
+#X_train1=pipeline_category_feat.fit_transform(X_train[category_features],y_train)
+
+#X_train1=dataprep_pipe.fit_transform(X_train,y_train)
 
 #############################
-##Step 3 Pipeline creation for model
+##Step 4 Pipeline creation for model
 #############################
+#Several classifier with Cross validation will be applied
+y_test=misspellingCorrector(y_test)
+
+label_enc=LabelEncoder()
+y_test=label_enc.fit_transform(y_test)
+
+sgd_clf=SGDClassifier()
+logreg_clf=LogisticRegression()
+linsvc_clf=LinearSVC()
+svc_clf=SVC()
+dectree_clf=DecisionTreeClassifier()
+rndforest_clf=RandomForestClassifier()
+#
+print ('Creating the full Pipeline')
+
+estimator=sgd_clf
+full_pipeline=Pipeline([('data_prep',dataprep_pipe),
+                        ('model',estimator)])
+
+full_pipeline.fit(X_train,y_train)
+
+##Apply cross validation with the full_pipeline
+cross_val_score(full_pipeline,X_train,y_train, cv=5, scoring='accuracy')
 
 
+y_pred=full_pipeline.predict(X_test)
 
-
+print ('Accuracy Score with',estimator,' estimator : ',accuracy_score(y_test, y_pred))
+print('F1 Score with',estimator,' estimator : ',f1_score(y_test, y_pred, average='weighted'))
+print('Precision Score with',estimator,' estimator : ',precision_score(y_test, y_pred, average='weighted'))
+print('Recall Score with',estimator,' estimator : ',recall_score(y_test, y_pred, average='weighted'))
+print('ROC_AUC score with',estimator,' estimator ', roc_auc_score(y_test, y_pred))
