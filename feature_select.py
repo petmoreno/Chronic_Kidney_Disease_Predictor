@@ -305,6 +305,13 @@ class Feature_Selector(BaseEstimator, TransformerMixin):
                 self.model=SVR(kernel='linear')
             self.feat_sel=RFECV(self.model)
         
+        if self.strategy=='wrapper_RFE':
+            if self.rfe_estimator=='LogisticRegression':
+                self.model=LogisticRegression(solver='lbfgs', max_iter=2000)
+            if self.rfe_estimator=='SVR':
+                self.model=SVR(kernel='linear')
+            self.feat_sel=RFE(self.model, n_features_to_select=k_out_features)
+        
         if self.strategy=='wrapper_BackElim':
             self.feat_sel=Backward_Elimination()   
         
@@ -319,8 +326,8 @@ class Feature_Selector(BaseEstimator, TransformerMixin):
         print('\n>>>>>>>>Calling fit() from Feature_Selector')
         #index=X.index
         self.y_train=y
-        print('\n********Inside fit() from Feature_Selector y_train length:', self.y_train.size)        
-        print('\n********Calling fit() from Feature_Selector X length: ', X.shape[0])
+        #print('\n********Inside fit() from Feature_Selector y_train length:', self.y_train.size)        
+        #print('\n********Calling fit() from Feature_Selector X length: ', X.shape[0])
         
         self.feat_sel.fit(X,self.y_train)
         return self
