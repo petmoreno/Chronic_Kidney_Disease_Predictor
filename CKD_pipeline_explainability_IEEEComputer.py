@@ -574,7 +574,7 @@ pipe_numeric_featsel= Pipeline([('mispelling',adhoc_transf.misspellingTransforme
                                  
                         ])
 
-pipe_category_feat= Pipeline([('mispelling',adhoc_transf.misspellingTransformer()),
+pipe_category_featsel= Pipeline([('mispelling',adhoc_transf.misspellingTransformer()),
                                  ('features_cast',adhoc_transf.Category_Cast_Column()),
                                  ('data_missing',missing_val_imput.Category_Imputer(strategy='most_frequent')),
                                  ('cat_feat_engineering',adhoc_transf.CastDown()),
@@ -584,7 +584,7 @@ pipe_category_feat= Pipeline([('mispelling',adhoc_transf.misspellingTransformer(
 X_train_numfeatsel=pipe_numeric_featsel.fit_transform(X_train[numerical_features])
 df_X_train_numfeatsel=pd.DataFrame(X_train_numfeatsel, columns=numerical_features)
 
-X_train_catfeatsel=pipe_category_feat.fit_transform(X_train[category_features])
+X_train_catfeatsel=pipe_category_featsel.fit_transform(X_train[category_features])
 df_X_train_catfeatsel=pd.DataFrame(X_train_catfeatsel, columns=category_features)
 
 # numerical_features=['age','bp','bgr','bu','sc','sod','pot','hemo','pcv','wc','rc']
@@ -618,7 +618,7 @@ cat_feat_selected_clf_v63_exp= ['al','su','htn', 'dm']
 
 
 feat_sel_pipe=ColumnTransformer([('numeric_pipe',pipe_numeric_featsel,num_feat_selected_clf_v63_exp),
-                                 ('category_pipe',pipe_category_feat, cat_feat_selected_clf_v63_exp)
+                                 ('category_pipe',pipe_category_featsel, cat_feat_selected_clf_v63_exp)
                                 ])
 
 X_train_featsel_clf_v63_exp=feat_sel_pipe.fit_transform(X_train_feat_selected_clf_v63_exp)
@@ -666,7 +666,7 @@ cat_feat_selected_clf_v63_exp= ['al','su','htn', 'dm']
 
 
 feat_sel_pipe=ColumnTransformer([('numeric_pipe',pipe_numeric_featsel,num_feat_selected_clf_v63_exp),
-                                 ('category_pipe',pipe_category_feat, cat_feat_selected_clf_v63_exp)
+                                 ('category_pipe',pipe_category_featsel, cat_feat_selected_clf_v63_exp)
                                 ])
 
 X_test_featsel_clf_v63_exp=feat_sel_pipe.fit_transform(X_test_feat_selected_clf_v63_exp)
