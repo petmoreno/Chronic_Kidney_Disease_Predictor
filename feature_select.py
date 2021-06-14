@@ -86,7 +86,7 @@ def feat_sel_RFE(X,y,k_out_features=None, estimator='LogisticRegression'):
         score_list =[]
         from sklearn.model_selection import train_test_split
         for n in range(len(nof_list)):
-            rfe = RFE(model,nof_list[n])
+            rfe = RFE(model,n_features_to_select=nof_list[n])
             X_train, X_test, y_train, y_test = train_test_split(X,y, test_size = 0.3, random_state = 0)
             X_train_rfe = rfe.fit_transform(X_train,y_train)
             X_test_rfe = rfe.transform(X_test)
@@ -101,7 +101,7 @@ def feat_sel_RFE(X,y,k_out_features=None, estimator='LogisticRegression'):
         k_out_features=nof
                 
     #obtain the pruned resultant df of features
-    rfe=RFE(model,k_out_features)
+    rfe=RFE(model,n_features_to_select=k_out_features)
     fit = rfe.fit(X, y)
     X_pruned=rfe.fit_transform(X,y)
     mask=fit.support_
@@ -263,7 +263,7 @@ class RidgeCV_FeatSel(BaseEstimator, TransformerMixin):
         
     def transform(self,X):
         print('\n>>>>>>>>Calling transform() from RidgeCV_FeatSel')
-        coef = pd.Series(reg.coef_, index = X.columns)
+        coef = pd.Series(self.reg.coef_, index = X.columns)
         feat_sel=coef>=0
         X_pruned=X[feat_sel.index[feat_sel]]        
         return X_pruned
